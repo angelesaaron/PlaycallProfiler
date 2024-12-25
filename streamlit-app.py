@@ -53,11 +53,11 @@ with tab_dashboard:
 
     # Time Frame ----------------------------
     setting_list = {
-        '1st Quarter': 1,
-        '2nd Quarter': 2,
-        '3rd Quarter': 3,
-        '4th Quarter': 4,
-        '2-Minute Drill': 5
+        '1Q': 1,
+        '2Q': 2,
+        '3Q': 3,
+        '4Q': 4,
+        '2-Min Drill': 5
         }
     setting_keys = setting_list.keys()
     timesetting = st.multiselect("Time: ", options=setting_keys, default = setting_keys)
