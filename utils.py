@@ -314,7 +314,7 @@ def create_play_breakdown_chart(data):
     fig.update_layout(showlegend=False)  # Hide legend
 
     # Display Pie Chart
-    st.plotly_chart(fig)
+    st.plotly_chart(fig, use_container_width=True)
 
 # Turnover % KPI, 
 def create_kpis(data):
