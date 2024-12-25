@@ -4,6 +4,7 @@ import json
 import requests
 #from pandas import json_normalize
 from datetime import datetime
+import plotly.express as px
 
 # DATA SOURCING ------------------------------------------------------------
 
@@ -113,7 +114,8 @@ def data_processing():
     pbp_clean['start_yardLine_transformed'] = pbp_clean.apply(transform_yard_line, axis=1)
 
     # Adding Yard Line Bucket
-    pbp_clean['yardLine_bucket'] = pbp['start_yardLine'].apply(categorize_yard_line)
+    pbp_clean['yardLine_bucket'] = pbp['start_ytez'].apply(categorize_yard_line)
+
 
     return pbp_clean
 
@@ -178,7 +180,7 @@ def game_status(row):
         
 # Handling Field Position
 def transform_yard_line(row):
-    start_yard_line = row['start_yardLine']
+    start_yard_line = row['start_ytez']
     if start_yard_line > 50:
         return 100 - start_yard_line
     else:
@@ -243,7 +245,7 @@ def parameterized_data(parameters):
     subset = data[
         (data['start_team_id'].isin(selected_team_ids)) &
         (data['is_home_team'].isin(homeaway)) &
-        (data['start_yardLine'].isin(yard_line_range)) &
+        (data['start_ytez'].isin(yard_line_range)) &
         (data['time_bucket'].isin(timesetting)) &
         (data['score_margin'].isin(margin)) &
         (data['score_status'].isin(score)) &
@@ -254,21 +256,115 @@ def parameterized_data(parameters):
     return subset
 
 # CALCULATING KPIS ---------------------------------------------------------------------------------
-def calc_kpi_playbreakdown(subset):
-    # Define KPIs
-    totalPlays = len(subset)
 
-    # Pass and Run Plays
-    pass_type_ids = [24, 3, 67, 24]
-    run_type_ids = [68, 5]
+# Play Breakdown Chart
+def create_play_breakdown_chart(data):
 
-    # Calculating the KPIs
-    passPlays = len(subset[subset['type_id'].isin(pass_type_ids)])
-    runPlays = len(subset[subset['type_id'].isin(run_type_ids)])
-
+    # Define Play Type IDs
+    pass_type_ids = [24, 3, 67, 24, 26, 51, 36, 7]
+    run_type_ids = [68, 5, 39, 9, 29]
+    punt_ids = [52, 17]
+    fg_ids = [60, 59, 38, 18, 40]
+    penalty_ids = [8]
+    
+    # Calculate KPIs
+    passPlays = len(data[data['type_id'].isin(pass_type_ids)])
+    runPlays = len(data[data['type_id'].isin(run_type_ids)])
+    puntPlays = len(data[data['type_id'].isin(punt_ids)])
+    fgPlays = len(data[data['type_id'].isin(fg_ids)])
+    penaltyPlays = len(data[data['type_id'].isin(penalty_ids)])
+    
     kpis = {
-        "Pass Plays": passPlays,
-        "Run Plays": runPlays,
+        "Pass": passPlays,
+        "Run": runPlays,
+        "FG": fgPlays,
+        "Punt": puntPlays,
+        "Penalty": penaltyPlays
     }
 
-    return kpis
+    filtered_kpis = {key: value for key, value in kpis.items() if value > 0}
+
+    # Define fixed colors
+    fixed_colors = {
+        "Pass": "#1f77b4",  # Blue for pass plays
+        "Run": "#2ca02c",   # Green for run plays
+        "FG": "#FFD700",  # Yellow/Gold for field goals
+        "Punt": "#808080",        # Gray for punts
+        "Penalty": "#FF5722"     # Red for penalties
+    }
+    # Prepare Pie Chart
+    labels = list(filtered_kpis.keys())
+    values = list(filtered_kpis.values())
+
+    fig = px.pie(
+        values=values,
+        names=labels,
+        title="Play Breakdown",
+        color=labels,  # Map labels to colors
+        color_discrete_map=fixed_colors  # Apply fixed color mapping
+    )
+
+    # Update Pie Chart Appearance
+    fig.update_traces(
+        textinfo='percent+label',  # Show both percentage and label
+        textfont_size=20          # Increase text font size for percentages
+    )
+    fig.update_layout(showlegend=False)  # Hide legend
+
+    # Display Pie Chart
+    st.plotly_chart(fig)
+
+# Turnover % KPI, 
+def create_kpis(data):
+    turnover_ids = [36, 39, 29, 20, 26]
+    interception_ids = [26, 36]
+    fumble_ids = [39, 9, 29]
+    punt_ids = [52, 17]
+    fg_ids = [60, 59, 38, 18, 40]
+
+    #-------------------------------
+
+    totalplays = len(data)
+    scoringPlays = len(data[data['scoringPlay']== True])
+
+    turnovers = len(data[data['type_id'].isin(turnover_ids)])
+
+    withoutST = data[~data['type_id'].isin(punt_ids + fg_ids)]
+    lenWithoutST = len(withoutST)
+    negativeplay = len(withoutST[withoutST['yardage'] <= 0])
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Total Plays", totalplays)
+    if totalplays > 0:
+        col2.metric("Scoring", f"{(scoringPlays / totalplays) * 100:.1f}%")
+    else:
+        col2.metric("Scoring", "0%") 
+    if totalplays > 0:
+        col3.metric("Turnover", f"{(turnovers / totalplays) * 100:.1f}%")
+    else:
+        col3.metric("Turnover", "0%")
+    if lenWithoutST > 0:
+        col4.metric("Negative Play", f"{(negativeplay / lenWithoutST) * 100:.1f}%")
+    else:
+        col4.metric("Negative Play", "0%")
+
+
+def create_key_plays(data):
+    scoring_true = data[data['scoringPlay'] == True]
+    scoring_false = data[data['scoringPlay'] == False]
+
+    # Sort scoringFalse by yardage in descending order
+    scoring_false_sorted = scoring_false.sort_values(by='yardage', ascending=False)
+
+    # Concatenate the two DataFrames, scoringTrue comes first
+    sorted_data = pd.concat([scoring_true, scoring_false_sorted])
+
+    # Optionally reset index
+    sorted_data.reset_index(drop=True, inplace=True)
+    # Display the top 5 plays' text values using st.write
+    top_plays = sorted_data['text'].head(5)
+    
+    st.subheader('Key Plays')
+    # Loop through each play and display it
+    for i, play_text in enumerate(top_plays, 1):
+        st.write(f"{i}. {play_text}")

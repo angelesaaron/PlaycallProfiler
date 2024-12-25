@@ -127,16 +127,21 @@ with tab_dashboard:
 
 
     # DATA VISUALIZATION
+    st.divider()
 
-    # Calculate KPIs
-    kpis = calc_kpi_playbreakdown(data)
-    labels = list(kpis.keys())
-    values = list(kpis.values())
-    # Create Pie Chart
-    fig = px.pie(values=values, names=labels, title="Play Breakdown")
+    # Calculate KPIs ------------------------------------------------------------------
 
-    # Display Pie Chart in Streamlit
-    st.plotly_chart(fig)
+    # Play Breakdown Chart
+    create_play_breakdown_chart(data)
+
+    # Create KPIs
+    create_kpis(data)
+
+    # Key Plays
+    create_key_plays(data)
+
+    # Ask Chat GPT for visualization ideas based on circumstances
+
 
 
 
