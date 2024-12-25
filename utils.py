@@ -327,31 +327,36 @@ def create_kpis(data):
     totalplays = len(data)
     scoringPlays = len(data[data['scoringPlay']== True])
 
-    turnovers = len(data[data['type_id'].isin(turnover_ids)])
-
     withoutST = data[~data['type_id'].isin(punt_ids + fg_ids)]
+
     lenWithoutST = len(withoutST)
-    negativeplay = len(withoutST[withoutST['yardage'] <= 0])
+    explosivePlays = len(withoutST[withoutST['yardage'] >= 20])
+
+    negativeplay = len(withoutST[withoutST['yardage'] < 0])
+
+    turnovers = len(withoutST[withoutST['type_id'].isin(turnover_ids)])
 
     col1, col2, col3, col4 = st.columns(4)
     col1.metric("Total Plays", totalplays)
+    col1.metric("Explosive Plays", explosivePlays)
     if totalplays > 0:
         col2.metric("Scoring", f"{(scoringPlays / totalplays) * 100:.1f}%")
     else:
         col2.metric("Scoring", "0%") 
-    if totalplays > 0:
-        col3.metric("Turnover", f"{(turnovers / totalplays) * 100:.1f}%")
-    else:
-        col3.metric("Turnover", "0%")
     if lenWithoutST > 0:
+        col3.metric("Turnover", f"{(turnovers / totalplays) * 100:.1f}%")
         col4.metric("Negative Play", f"{(negativeplay / lenWithoutST) * 100:.1f}%")
     else:
         col4.metric("Negative Play", "0%")
+        col3.metric("Turnover", "0%")
 
 
 def create_key_plays(data):
-    scoring_true = data[data['scoringPlay'] == True]
-    scoring_false = data[data['scoringPlay'] == False]
+    punt_ids = [52, 17]
+    fg_ids = [60, 59, 38, 18, 40]
+    withoutST = data[~data['type_id'].isin(punt_ids + fg_ids)]
+    scoring_true = withoutST[withoutST['scoringPlay'] == True]
+    scoring_false = withoutST[withoutST['scoringPlay'] == False]
 
     # Sort scoringFalse by yardage in descending order
     scoring_false_sorted = scoring_false.sort_values(by='yardage', ascending=False)
