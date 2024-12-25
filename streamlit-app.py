@@ -7,6 +7,7 @@ import json
 import requests
 from datetime import datetime
 import streamlit as st
+import altair as alt
 import plotly.express as px
 
 st.set_page_config(page_title="NFL Playcall Profiler", initial_sidebar_state="expanded")
@@ -131,14 +132,15 @@ with tab_dashboard:
 
     # Calculate KPIs ------------------------------------------------------------------
 
+    # Create KPIs
+    create_kpis(data)
     # Play Breakdown Chart
     create_play_breakdown_chart(data)
 
-    # Create KPIs
-    create_kpis(data)
-
     # Key Plays
     create_key_plays(data)
+
+
 
     # Ask Chat GPT for visualization ideas based on circumstances
 
@@ -155,4 +157,22 @@ with tab_dashboard:
     st.markdown('''
                 *I do not own the data. All data is sourced via NFL API (Rapid API) via ESPN Stats.*
                 ''')
-    
+
+with tab_faq:
+    expand_faq1 = st.expander('''What is Playcall Profiler?''')
+    with expand_faq1:
+        st.write('''
+        Playcall Profiler is a powerful tool designed to evaluate and aggregate NFL play-by-play data, 
+        helping users analyze and uncover tendencies in NFL playcalling based on various scenarios.
+        With over 8 different filters, it allows for in-depth analysis, enabling you to drill down into specific situations and gain a clear,
+        focused understanding of how teams make decisions under different conditions. 
+        Whether you're analyzing play types, scoring situations, or yardage ranges, 
+        Playcall Profiler gives you the ability to uncover insights that might otherwise go unnoticed.
+        ''', unsafe_allow_html=True) 
+    expand_faq2 = st.expander('''How recent is the data?''')
+    with expand_faq2:
+        st.write('''
+        The data in Playcall Profiler is updated to reflect the most recent NFL week,
+         ensuring that all play-by-play data is current up to and including the previous week. 
+        For example, if the upcoming week is Week 10, the tool will load all play-by-play data through and including Week 9.
+                 ''', unsafe_allow_html=True)

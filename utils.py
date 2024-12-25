@@ -5,6 +5,7 @@ import requests
 #from pandas import json_normalize
 from datetime import datetime
 import plotly.express as px
+import altair as alt
 
 # DATA SOURCING ------------------------------------------------------------
 
@@ -299,16 +300,17 @@ def create_play_breakdown_chart(data):
     fig = px.pie(
         values=values,
         names=labels,
-        title="Play Breakdown",
         color=labels,  # Map labels to colors
         color_discrete_map=fixed_colors  # Apply fixed color mapping
     )
 
     # Update Pie Chart Appearance
     fig.update_traces(
-        textinfo='percent+label',  # Show both percentage and label
-        textfont_size=20          # Increase text font size for percentages
-    )
+        textinfo='percent+label',
+        textfont_size=20, 
+        hoverinfo='percent+label', 
+    )   
+
     fig.update_layout(showlegend=False)  # Hide legend
 
     # Display Pie Chart
@@ -345,12 +347,12 @@ def create_kpis(data):
         col2.metric("Scoring", "0%") 
     if lenWithoutST > 0:
         col3.metric("Turnover", f"{(turnovers / totalplays) * 100:.1f}%")
-        col4.metric("Negative Play", f"{(negativeplay / lenWithoutST) * 100:.1f}%")
+        col4.metric("Negative / Penalty", f"{(negativeplay / lenWithoutST) * 100:.1f}%")
     else:
-        col4.metric("Negative Play", "0%")
+        col4.metric("Negative / Penalty", "0%")
         col3.metric("Turnover", "0%")
 
-
+# Key Plays
 def create_key_plays(data):
     punt_ids = [52, 17]
     fg_ids = [60, 59, 38, 18, 40]
@@ -373,3 +375,4 @@ def create_key_plays(data):
     # Loop through each play and display it
     for i, play_text in enumerate(top_plays, 1):
         st.write(f"{i}. {play_text}")
+
